@@ -15,7 +15,7 @@ LABEL_EMOJI = {
 }.freeze
 
 # GitHubクライアントの初期化
-client = Octokit::Client.new(access_token: '')
+client = Octokit::Client.new(access_token: 'envに設定したアクセストークン')
 
 def prompt(message)
   print "#{message}: "

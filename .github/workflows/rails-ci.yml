@@ -1,5 +1,9 @@
 name: Rails CI Job - Install dependencies, run linters and rspec
 
+on:
+  push:
+    branches:
+      - '**' # すべてのブランチを対象
 jobs:
   rails-ci-job:
     runs-on: ubuntu-latest

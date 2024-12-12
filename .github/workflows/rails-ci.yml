@@ -1,0 +1,21 @@
+name: Rails CI Job - Install dependencies, run linters and rspec
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ develop, 'feature/**' ]
+  workflow_run: # create-pr-releaseで作成されたPRの場合、pull_requestイベントがトリガーされない
+    workflows: ["Create PR from develop to master"]
+    branches: [ develop ]
+    types:
+      - completed
+jobs:
+  rails-ci-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check spelling
+        uses: streetsidesoftware/cspell-action@v6

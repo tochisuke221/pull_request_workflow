@@ -1,0 +1,11 @@
+name: Rails CI Job - Install dependencies, run linters and rspec
+
+jobs:
+  rails-ci-job:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check spelling
+        uses: streetsidesoftware/cspell-action@v6

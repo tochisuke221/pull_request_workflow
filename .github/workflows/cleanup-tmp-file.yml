@@ -2,7 +2,7 @@ name: Cleanup tmp file
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '* * * * *'
 
 jobs:
   cleanup-tmp-file:

@@ -1,0 +1,49 @@
+name: Cleanup tmp file
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+
+jobs:
+  cleanup-tmp-file:
+    runs-on: ubuntu-latest
+    env:
+      TZ: Asia/Tokyo
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      
+      - name: Cleanup tmp file
+        run: |
+          # 現在の日付から1週間前の日付を取得
+          ONE_WEEK_AGO_DATE=$(date -d '1 week ago' '+%Y%m%d')
+          echo "$ONE_WEEK_AGO_DATE よりも前のファイルを削除します"
+
+          cd tmp/ 2>/dev/null || { echo "tmpディレクトリが存在しません" && exit 0 }
+
+          # yyyymmdd-で始まるファイルを捜索 & 削除
+
+          for file in * do
+            FILE_DATE=$(echo "$file" | cut -c1-8)
+            if [[ "$FILE_DATE" < "$ONE_WEEK_AGO_DATE" ]]; then
+              rm -f "$file"
+              echo "$file を削除しました"
+            fi
+          done
+
+      - name: Commit changes if files were deleted
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git add -A
+            git commit -m "Cleanup tmp files older than 1 week (JST)"
+            git push
+          else
+            echo "削除対象のファイルはありませんでした"
+          fi
+          

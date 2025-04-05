@@ -2,8 +2,12 @@ name: Cleanup tmp file and create PR
 
 on:
   schedule:
-    - cron: "* * * * *" # 👈 1分ごとに実行
-  workflow_dispatch: # 手動でも実行できる
+    - cron: "* * * * *" # 1分ごとに実行
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
 
 jobs:
   cleanup-tmp-file:
@@ -16,40 +20,36 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0 # 👈 ブランチ作成に必要
+          fetch-depth: 0
 
       - name: Setup Git
         run: |
           git config --global user.name "github-actions"
           git config --global user.email "github-actions@github.com"
 
-      - name: Create new branch
-        id: create_branch
+      - name: Cleanup tmp file
         run: |
-          DATE=$(date '+%Y%m%d-%H%M%S')  # 👈 毎回ユニークにするため時刻まで
-          BRANCH_NAME="cleanup-tmp-${DATE}"
-          git checkout -b "$BRANCH_NAME"
-          echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+          ONE_WEEK_AGO_DATE=$(date -d '1 week ago' '+%Y%m%d')
+          echo "$ONE_WEEK_AGO_DATE よりも前のファイルを削除します"
 
-      - name: Commit changes (do not push!)
-        id: commit_changes
-        run: |
-          if [[ -n "$(git status --porcelain)" ]]; then
-            git add -A
-            git commit -m "Cleanup tmp files older than 1 week"
-            echo "changes_committed=true" >> $GITHUB_OUTPUT
-          else
-            echo "削除対象のファイルはありませんでした"
-            echo "changes_committed=false" >> $GITHUB_OUTPUT
-          fi
+          cd tmp/ 2>/dev/null || {
+            echo "tmpディレクトリが存在しません"
+            exit 0
+          }
+
+          for file in *; do
+            FILE_DATE=$(echo "$file" | cut -c1-8)
+            if [[ "$FILE_DATE" < "$ONE_WEEK_AGO_DATE" ]]; then
+              rm -f "$file"
+              echo "$file を削除しました"
+            fi
+          done
 
       - name: Create Pull Request
-        if: steps.commit_changes.outputs.changes_committed == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: ${{ steps.create_branch.outputs.branch_name }}
+          branch: cleanup-tmp-${{ github.run_id }}  # 一意なブランチ名
           base: main
           title: "Cleanup tmp files"
-          body: "1週間以上前の tmp ファイルを削除しました。ご確認ください。"
-          commit-message: "Cleanup tmp files older than 1 week"
+          body: "1週間以上前の tmp ファイル

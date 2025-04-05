@@ -18,6 +18,10 @@ jobs:
           ref: main
           fetch-depth: 0 # 👈 ブランチ作成に必要
 
+      permissions:
+        contents: write
+        pull-requests: write
+
       - name: Setup Git
         run: |
           git config --global user.name "github-actions"

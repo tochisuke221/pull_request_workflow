@@ -52,4 +52,4 @@ jobs:
           branch: cleanup-tmp-${{ github.run_id }}  # 一意なブランチ名
           base: main
           title: "Cleanup tmp files"
-          body: "1週間以上前の tmp ファイル
+          body: "1週間以上前の tmp ファイル"

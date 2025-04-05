@@ -50,7 +50,6 @@ jobs:
           done
 
       - name: Create Pull Request
-        if: steps.push_changes.outputs.changes_pushed == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -58,3 +57,6 @@ jobs:
           base: main
           title: "Cleanup tmp files"
           body: "1週間以上前の tmp ファイルを削除しました。ご確認ください。"
+          commit-message: "Cleanup tmp files older than 1 week"
+          add-paths: |
+            tmp/*

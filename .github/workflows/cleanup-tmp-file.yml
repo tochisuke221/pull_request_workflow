@@ -1,32 +1,44 @@
-name: Cleanup tmp file
+name: Cleanup tmp file and create PR
 
 on:
   schedule:
-    - cron: '* * * * *'
+    - cron: '* * * * *'  # 👈 1分ごとに実行
+  workflow_dispatch:       # 手動でも実行できる
 
 jobs:
   cleanup-tmp-file:
     runs-on: ubuntu-latest
     env:
       TZ: Asia/Tokyo
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     steps:
-      - name: checkout repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           ref: main
-      
+          fetch-depth: 0  # 👈 ブランチ作成に必要
+
+      - name: Setup Git
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+      - name: Create new branch
+        id: create_branch
+        run: |
+          DATE=$(date '+%Y%m%d-%H%M%S')  # 👈 毎回ユニークにするため時刻まで
+          BRANCH_NAME="cleanup-tmp-${DATE}"
+          git checkout -b "$BRANCH_NAME"
+          echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
+
       - name: Cleanup tmp file
         run: |
-          # 現在の日付から1週間前の日付を取得
           ONE_WEEK_AGO_DATE=$(date -d '1 week ago' '+%Y%m%d')
           echo "$ONE_WEEK_AGO_DATE よりも前のファイルを削除します"
 
           cd tmp/ 2>/dev/null || { echo "tmpディレクトリが存在しません" && exit 0 }
 
-          # yyyymmdd-で始まるファイルを捜索 & 削除
-
-          for file in * do
+          for file in *; do
             FILE_DATE=$(echo "$file" | cut -c1-8)
             if [[ "$FILE_DATE" < "$ONE_WEEK_AGO_DATE" ]]; then
               rm -f "$file"
@@ -34,16 +46,25 @@ jobs:
             fi
           done
 
-      - name: Commit changes if files were deleted
+      - name: Commit and push changes
+        id: push_changes
         run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          
           if [[ -n "$(git status --porcelain)" ]]; then
             git add -A
-            git commit -m "Cleanup tmp files older than 1 week (JST)"
-            git push
+            git commit -m "Cleanup tmp files older than 1 week"
+            git push origin HEAD
+            echo "changes_pushed=true" >> "$GITHUB_OUTPUT"
           else
             echo "削除対象のファイルはありませんでした"
+            echo "changes_pushed=false" >> "$GITHUB_OUTPUT"
           fi
-          
+
+      - name: Create Pull Request
+        if: steps.push_changes.outputs.changes_pushed == 'true'
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.create_branch.outputs.branch_name }}
+          base: main
+          title: "Cleanup tmp files"
+          body: "1週間以上前の tmp ファイルを削除しました。ご確認ください。"

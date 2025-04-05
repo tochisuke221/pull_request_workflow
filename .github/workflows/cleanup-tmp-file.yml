@@ -36,7 +36,10 @@ jobs:
           ONE_WEEK_AGO_DATE=$(date -d '1 week ago' '+%Y%m%d')
           echo "$ONE_WEEK_AGO_DATE よりも前のファイルを削除します"
 
-          cd tmp/ 2>/dev/null || { echo "tmpディレクトリが存在しません";  exit 0 }
+          cd tmp/ 2>/dev/null || {
+            echo "tmpディレクトリが存在しません"
+            exit 0
+          }
 
           for file in *; do
             FILE_DATE=$(echo "$file" | cut -c1-8)

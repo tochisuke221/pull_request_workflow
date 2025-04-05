@@ -31,25 +31,20 @@ jobs:
           git checkout -b "$BRANCH_NAME"
           echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
 
-      - name: Cleanup tmp file
+      - name: Commit changes (do not push!)
+        id: commit_changes
         run: |
-          ONE_WEEK_AGO_DATE=$(date -d '1 week ago' '+%Y%m%d')
-          echo "$ONE_WEEK_AGO_DATE よりも前のファイルを削除します"
-
-          cd tmp/ 2>/dev/null || {
-            echo "tmpディレクトリが存在しません"
-            exit 0
-          }
-
-          for file in *; do
-            FILE_DATE=$(echo "$file" | cut -c1-8)
-            if [[ "$FILE_DATE" < "$ONE_WEEK_AGO_DATE" ]]; then
-              rm -f "$file"
-              echo "$file を削除しました"
-            fi
-          done
+          if [[ -n "$(git status --porcelain)" ]]; then
+            git add -A
+            git commit -m "Cleanup tmp files older than 1 week"
+            echo "changes_committed=true" >> $GITHUB_OUTPUT
+          else
+            echo "削除対象のファイルはありませんでした"
+            echo "changes_committed=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create Pull Request
+        if: steps.commit_changes.outputs.changes_committed == 'true'
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -58,5 +53,3 @@ jobs:
           title: "Cleanup tmp files"
           body: "1週間以上前の tmp ファイルを削除しました。ご確認ください。"
           commit-message: "Cleanup tmp files older than 1 week"
-          add-paths: |
-            tmp/*

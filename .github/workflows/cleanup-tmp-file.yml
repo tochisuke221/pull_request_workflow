@@ -49,19 +49,6 @@ jobs:
             fi
           done
 
-      # - name: Commit and push changes
-      #   id: push_changes
-      #   run: |
-      #     if [[ -n "$(git status --porcelain)" ]]; then
-      #       git add -A
-      #       git commit -m "Cleanup tmp files older than 1 week"
-      #       git push origin HEAD
-      #       echo "changes_pushed=true" >> "$GITHUB_OUTPUT"
-      #     else
-      #       echo "削除対象のファイルはありませんでした"
-      #       echo "changes_pushed=false" >> "$GITHUB_OUTPUT"
-      #     fi
-
       - name: Create Pull Request
         if: steps.push_changes.outputs.changes_pushed == 'true'
         uses: peter-evans/create-pull-request@v5

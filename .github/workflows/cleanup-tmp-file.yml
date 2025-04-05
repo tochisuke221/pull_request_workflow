@@ -1,54 +1,54 @@
-name: Cleanup tmp file and create PR
+# name: Cleanup tmp file and create PR
 
-on:
-  schedule:
-    - cron: "*/5 * * * *" # 定期実行を指定
-  workflow_dispatch: # GithubのGUIから手動で実行できるようになる
+# on:
+#   schedule:
+#     - cron: "*/5 * * * *" # 定期実行を指定
+#   workflow_dispatch: # GithubのGUIから手動で実行できるようになる
 
-permissions:
-  contents: write
-  pull-requests: write
+# permissions:
+#   contents: write
+#   pull-requests: write
 
-jobs:
-  cleanup-tmp-file:
-    runs-on: ubuntu-latest
-    env:
-      TZ: Asia/Tokyo
+# jobs:
+#   cleanup-tmp-file:
+#     runs-on: ubuntu-latest
+#     env:
+#       TZ: Asia/Tokyo
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: main
+#     steps:
+#       - name: Checkout repository
+#         uses: actions/checkout@v4
+#         with:
+#           ref: main
 
-      - name: Setup Git
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
+#       - name: Setup Git
+#         run: |
+#           git config --global user.name "github-actions"
+#           git config --global user.email "github-actions@github.com"
 
-      - name: Cleanup tmp file
-        run: |
-          ONE_WEEK_AGO_DATE=$(date -d '1 week ago' '+%Y%m%d')
-          echo "$ONE_WEEK_AGO_DATE よりも前のファイルを削除します"
+#       - name: Cleanup tmp file
+#         run: |
+#           ONE_WEEK_AGO_DATE=$(date -d '1 week ago' '+%Y%m%d')
+#           echo "$ONE_WEEK_AGO_DATE よりも前のファイルを削除します"
 
-          cd tmp/ 2>/dev/null || {
-            echo "tmpディレクトリが存在しません"
-            exit 0
-          }
+#           cd tmp/ 2>/dev/null || {
+#             echo "tmpディレクトリが存在しません"
+#             exit 0
+#           }
 
-          for file in *; do
-            FILE_DATE=$(echo "$file" | cut -c1-8)
-            if [[ "$FILE_DATE" < "$ONE_WEEK_AGO_DATE" ]]; then
-              rm -f "$file"
-              echo "$file を削除しました"
-            fi
-          done
+#           for file in *; do
+#             FILE_DATE=$(echo "$file" | cut -c1-8)
+#             if [[ "$FILE_DATE" < "$ONE_WEEK_AGO_DATE" ]]; then
+#               rm -f "$file"
+#               echo "$file を削除しました"
+#             fi
+#           done
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: cleanup-tmp-${{ github.run_id }}  # 一意なブランチ名
-          base: main
-          title: "Cleanup tmp files"
-          body: "1週間以上前の tmp ファイル"
+#       - name: Create Pull Request
+#         uses: peter-evans/create-pull-request@v5
+#         with:
+#           token: ${{ secrets.GITHUB_TOKEN }}
+#           branch: cleanup-tmp-${{ github.run_id }}  # 一意なブランチ名
+#           base: main
+#           title: "Cleanup tmp files"
+#           body: "1週間以上前の tmp ファイル"
